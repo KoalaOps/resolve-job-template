@@ -1,0 +1,79 @@
+name: 'Resolve Job Template'
+description: 'Resolves Kubernetes job/template resource name by label discovery'
+author: 'KoalaOps'
+
+branding:
+  icon: 'search'
+  color: 'purple'
+
+inputs:
+  job_name:
+    description: 'Logical job name (used for label discovery of the job/template)'
+    required: true
+  namespace:
+    description: 'Kubernetes namespace where the job is deployed'
+    required: true
+  job_type:
+    description: 'Type of job resource (kubernetes-cronjob, argo-workflow, or argo-cronworkflow)'
+    required: true
+
+outputs:
+  name:
+    description: 'Resolved resource name'
+    value: ${{ steps.resolve.outputs.name }}
+  kind:
+    description: 'Resource kind (cronjob, workflowtemplate, or cronworkflow)'
+    value: ${{ steps.resolve.outputs.kind }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Resolve k8s resource name for the job/template (by label)
+      id: resolve
+      shell: bash
+      run: |
+        set -euo pipefail
+        NS="${{ inputs.namespace }}"
+        JOB_NAME="${{ inputs.job_name }}"
+        JOB_TYPE="${{ inputs.job_type }}"
+
+        # Determine the kind based on job type
+        case "$JOB_TYPE" in
+          kubernetes-cronjob)
+            KIND="cronjob"
+            ;;
+          argo-workflow)
+            KIND="workflowtemplate"
+            ;;
+          argo-cronworkflow)
+            KIND="cronworkflow"
+            ;;
+          *)
+            echo "::error::Invalid job_type: $JOB_TYPE. Must be one of: kubernetes-cronjob, argo-workflow, argo-cronworkflow"
+            exit 1
+            ;;
+        esac
+
+        # Use tight label selector
+        SELECTOR="app.kubernetes.io/name=${JOB_NAME}"
+
+        # Count matching resources
+        COUNT="$(kubectl get "$KIND" -n "$NS" -l "$SELECTOR" -o jsonpath='{.items[*].metadata.name}' | wc -w | tr -d ' ')"
+
+        if [ "$COUNT" -eq 0 ]; then
+          echo "::error::No $KIND found in ns=$NS with label '$SELECTOR'. Ensure the resource is deployed and labeled."
+          exit 1
+        fi
+
+        if [ "$COUNT" -gt 1 ]; then
+          echo "::error::$COUNT $KIND resources match '$SELECTOR' in ns=$NS. Labels must be unique per job. Add app.kubernetes.io/instance or refine labels."
+          kubectl get "$KIND" -n "$NS" -l "$SELECTOR" -o name
+          exit 1
+        fi
+
+        # Get the resource name
+        NAME="$(kubectl get "$KIND" -n "$NS" -l "$SELECTOR" -o jsonpath='{.items[0].metadata.name}')"
+
+        echo "✅ Resolved $KIND: $NAME in namespace $NS"
+        echo "name=$NAME" >> "$GITHUB_OUTPUT"
+        echo "kind=$KIND" >> "$GITHUB_OUTPUT"
