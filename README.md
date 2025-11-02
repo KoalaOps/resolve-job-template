@@ -6,7 +6,7 @@ Resolves Kubernetes job or workflow template resource names by label discovery. 
 
 ```yaml
 - name: Resolve job resource
-  uses: KoalaOps/resolve-job-template@v1
+  uses: skyhook-io/resolve-job-template@v1
   id: resolve
   with:
     job_name: my-batch-job
@@ -38,7 +38,7 @@ Resolves Kubernetes job or workflow template resource names by label discovery. 
 
 ### Kubernetes CronJob
 ```yaml
-- uses: KoalaOps/resolve-job-template@v1
+- uses: skyhook-io/resolve-job-template@v1
   with:
     job_name: nightly-backup
     namespace: production
@@ -47,7 +47,7 @@ Resolves Kubernetes job or workflow template resource names by label discovery. 
 
 ### Argo WorkflowTemplate
 ```yaml
-- uses: KoalaOps/resolve-job-template@v1
+- uses: skyhook-io/resolve-job-template@v1
   with:
     job_name: data-processing
     namespace: workflows
@@ -56,7 +56,7 @@ Resolves Kubernetes job or workflow template resource names by label discovery. 
 
 ### Argo CronWorkflow
 ```yaml
-- uses: KoalaOps/resolve-job-template@v1
+- uses: skyhook-io/resolve-job-template@v1
   with:
     job_name: scheduled-report
     namespace: workflows
@@ -121,7 +121,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Authenticate to cluster
-        uses: KoalaOps/cloud-login@v1
+        uses: skyhook-io/cloud-login@v1
         with:
           provider: gcp
           account: my-project
@@ -130,7 +130,7 @@ jobs:
 
       - name: Resolve job resource
         id: resolve
-        uses: KoalaOps/resolve-job-template@v1
+        uses: skyhook-io/resolve-job-template@v1
         with:
           job_name: ${{ inputs.job_name }}
           namespace: ${{ inputs.namespace }}

@@ -1,6 +1,6 @@
 name: 'Resolve Job Template'
 description: 'Resolves Kubernetes job/template resource name by label discovery'
-author: 'KoalaOps'
+author: 'Skyhook'
 
 branding:
   icon: 'search'
